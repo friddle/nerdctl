@@ -101,7 +101,7 @@ type firewallConfig struct {
 func newFirewallPlugin() *firewallConfig {
 	c := &firewallConfig{
 		PluginType:    "firewall",
-		IngressPolicy: "same-bridge",
+		IngressPolicy: "open",
 	}
 	if rootlessutil.IsRootless() {
 		// https://github.com/containerd/nerdctl/issues/2818
