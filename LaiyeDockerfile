@@ -1,0 +1,36 @@
+# 使用多阶段构建以减少最终镜像大小
+# 第一阶段：构建环境
+FROM golang:1.24-alpine as builder
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+# 安装构建依赖
+RUN apk add --no-cache \
+    git \
+    make \
+    gcc \
+    musl-dev
+
+# 克隆 nerdctl 源码（可替换为特定版本或分支）
+WORKDIR /src
+COPY . /src
+
+ENV GOPROXY=https://goproxy.cn
+# 构建静态二进制文件（可根据需要调整GO_LDFLAGS）
+RUN GO_LDFLAGS="-w -s" \
+    CGO_ENABLED=0 \
+    make binaries
+
+# 第二阶段：最小化运行环境
+FROM alpine:3.19
+
+# 拷贝构建好的二进制文件到新镜像
+COPY --from=builder /src/_output/nerdctl /usr/local/bin/nerdctl
+
+# 可选：设置执行权限（通常COPY后已保留权限）
+# RUN chmod +x /usr/local/bin/nerdctl
+
+# 可选：设置默认入口
+ENTRYPOINT ["/usr/local/bin/nerdctl"]
+
+
+
